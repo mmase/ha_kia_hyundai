@@ -1,6 +1,7 @@
 import logging
-
-from datetime import timedelta
+import time
+import uuid
+from datetime import datetime, timedelta, timezone
 
 from homeassistant.core import HomeAssistant
 from homeassistant.const import (
@@ -15,6 +16,7 @@ from homeassistant.helpers.aiohttp_client import async_get_clientsession
 from kia_hyundai_api import UsKia, AuthError
 
 from .const import (
+    CONF_ACCESS_TOKEN,
     CONF_DEVICE_ID,
     CONF_REFRESH_TOKEN,
     DOMAIN,
@@ -28,6 +30,62 @@ from .vehicle_coordinator import VehicleCoordinator
 
 
 _LOGGER = logging.getLogger(__name__)
+
+
+def _get_patched_api_headers(api_instance, vehicle_key: str | None = None) -> dict:
+    """Generate working headers for Kia USA API with updated app version and secrets.
+    
+    The kia-hyundai-api library uses outdated headers that no longer work with
+    the Kia USA API. This function provides the correct iOS headers that work.
+    """
+    offset = time.localtime().tm_gmtoff / 60 / 60
+    client_uuid = uuid.uuid5(uuid.NAMESPACE_DNS, api_instance.device_id)
+    
+    headers = {
+        "content-type": "application/json;charset=utf-8",
+        "accept": "application/json",
+        "accept-encoding": "gzip, deflate, br",
+        "accept-language": "en-US,en;q=0.9",
+        "accept-charset": "utf-8",
+        "apptype": "L",
+        "appversion": "7.22.0",
+        "clientid": "SPACL716-APL",
+        "clientuuid": str(client_uuid),
+        "from": "SPA",
+        "host": "api.owners.kia.com",
+        "language": "0",
+        "offset": str(int(offset)),
+        "ostype": "iOS",
+        "osversion": "15.8.5",
+        "phonebrand": "iPhone",
+        "secretkey": "sydnat-9kykci-Kuhtep-h5nK",
+        "to": "APIGW",
+        "tokentype": "A",
+        "user-agent": "KIAPrimo_iOS/37 CFNetwork/1335.0.3.4 Darwin/21.6.0",
+        "date": datetime.now(tz=timezone.utc).strftime("%a, %d %b %Y %H:%M:%S GMT"),
+        "deviceid": api_instance.device_id,
+    }
+    
+    # Add dynamic headers from the original method
+    if api_instance.session_id is not None:
+        headers["sid"] = api_instance.session_id
+    if api_instance.refresh_token is not None:
+        headers["rmtoken"] = api_instance.refresh_token
+    if api_instance.otp_key is not None:
+        headers["otpkey"] = api_instance.otp_key
+        if api_instance.notify_type is not None:
+            headers["notifytype"] = api_instance.notify_type
+        if api_instance.last_action is not None and "xid" in api_instance.last_action:
+            headers["xid"] = api_instance.last_action["xid"]
+    if vehicle_key is not None:
+        headers["vinkey"] = vehicle_key
+    return headers
+
+
+def patch_api_headers(api_connection: UsKia) -> None:
+    """Monkeypatch the API headers on a UsKia instance."""
+    _LOGGER.debug("Patching Kia USA API headers with updated iOS headers")
+    api_connection._api_headers = lambda vehicle_key=None: _get_patched_api_headers(api_connection, vehicle_key)
 
 
 async def async_migrate_entry(hass: HomeAssistant, config_entry: ConfigEntry):
@@ -79,6 +137,10 @@ async def async_setup_entry(hass: HomeAssistant, config_entry: ConfigEntry):
         device_id=device_id,
         refresh_token=refresh_token,
     )
+    
+    # Monkeypatch the API headers with working iOS headers
+    patch_api_headers(api_connection)
+    
     try:
         await api_connection.get_vehicles()
     except AuthError as err:

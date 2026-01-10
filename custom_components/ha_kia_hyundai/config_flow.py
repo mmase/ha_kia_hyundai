@@ -27,6 +27,7 @@ from .const import (
     DEFAULT_SCAN_INTERVAL,
     CONFIG_FLOW_TEMP_VEHICLES,
 )
+from . import patch_api_headers
 
 _LOGGER = logging.getLogger(__name__)
 
@@ -115,8 +116,10 @@ class KiaUvoConfigFlowHandler(config_entries.ConfigFlow):
                     otp_callback=otp_callback,
                     client_session=client_session,
                 )
+                # Patch the API headers with working iOS headers
+                patch_api_headers(self.api_connection)
+                
                 self.data.update(user_input)
-#                try:
                 self.otp_task = self.hass.loop.create_task(self.api_connection.login())
 #                except OneTimePasswordStarted:
 #                    _LOGGER.debug("OTP code required")

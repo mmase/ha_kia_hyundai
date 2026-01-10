@@ -27,3 +27,5 @@ tts
 scenes.yaml
 scripts.yaml
 secrets.yaml
+# Added by Snap Cursor Rules extension
+.cursor/rules/remote
