@@ -1,5 +1,5 @@
 {
-  "domain": "ha_kia_hyundai_new",
+  "domain": "ha_kia_hyundai",
   "name": "Kia US",
   "codeowners": ["@dahlb"],
   "config_flow": true,
