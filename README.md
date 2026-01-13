@@ -1,82 +1,176 @@
-# HOSTILE API
+# Kia Connect (USA) - Community Maintained
 
-## Due to a hostile API this integration was archived on Dec 20th 2025.
+[![hacs_badge](https://img.shields.io/badge/HACS-Custom-orange.svg)](https://github.com/custom-components/hacs)
+[![GitHub Release](https://img.shields.io/github/release/MarcusTaz/ha_kia_hyundai.svg)](https://github.com/MarcusTaz/ha_kia_hyundai/releases)
+[![License](https://img.shields.io/github/license/MarcusTaz/ha_kia_hyundai.svg)](LICENSE)
 
-[![GitHub Release][releases-shield]][releases]
-[![GitHub Activity][commits-shield]][commits]
-[![License][license-shield]](LICENSE)
-[![hacs][hacsbadge]][hacs]
+A Home Assistant integration for **Kia Connect (USA)** with **OTP authentication support**. This is a community-maintained fork that fixes critical issues after the original repository was archived.
 
-![Project Maintenance][maintenance-shield]
-[![BuyMeCoffee][buymecoffeebadge]][buymecoffee]
+## 🚗 What This Integration Does
 
-A custom integration for Kia Uvo in the USA region. This implementation focuses on providing tracking of api actions as the api is asynchronous and avoiding draining the 12v battery (starting with a rewrite in v1.9).
+Connect your USA Kia vehicle to Home Assistant and control:
+- 🔋 Battery level & charging status
+- 🌡️ Climate control (start/stop HVAC remotely)
+- 🔒 Door locks (lock/unlock)
+- 📍 Vehicle location
+- ⚡ Charge limits (AC/DC)
+- 🚪 Door, trunk, and hood status
+- 🔧 Tire pressure warnings
+- 📊 Odometer & range
+- 🔌 Charging switch (start/stop charging when plugged in)
 
-## Warnings ##
-- this is only functional for USA Kia, if you are in another region or use hyundai try [kia_uvo](https://github.com/Hyundai-Kia-Connect/kia_uvo).
-- charging switch is only available while the vehicle is plugged in
-- use desired defrost and desired Heating acc switches to indicate which you want started when you change climate from off to auto
-- 1.9.0 is a rewrite, there will likely be a few bugs in 1.9.0
+## ⚠️ Important Notes
 
-## Feature Highlights ##
-- Minimizing UI thread workload to allow things like Google Home to function correctly
-- Multiple vehicle support
-- Clean easy to maintain MVC design
-- Published PyPi for all API interactions to help full python community
-- Action locks to prevent attempts to call two actions at the same time, the api doesn't support parallel actions.
-- Tracking results of asynchronous vehicle APIs through to conclusion.
+- **USA ONLY** - This integration only works with Kia vehicles registered in the United States
+- **OTP Support** - Fully supports the new OTP (One-Time Password) authentication via SMS or Email
+- **Kia Connect Subscription Required** - Your vehicle must have an active Kia Connect subscription
 
-## Installation ##
-You can install this either manually copying files or using HACS. Configuration can be done on UI, you need to enter your username and password.
+## 🔧 Why This Fork Exists
 
-- It will allow selection during setup of which vehicle to fetch values for.
-- To set up two vehicles add the integration through HA UI twice.
-- refresh - It will fetch the cached information every 10 minutes from Kia Servers. **Now Configurable**
+The original [dahlb/ha_kia_hyundai](https://github.com/dahlb/ha_kia_hyundai) repository was **archived in December 2024** due to API challenges. However, the community still needs this integration!
 
-## Supported entities ##
-- Air Conditioner Status, Defroster Status, Set Temperature
-- Heated Rear Window, Heated Steering Wheel
-- Car Battery Level (12v), EV Battery Level, Remaining Time to Full Charge
-- Tire Pressure Warnings (all)
-- Charge Status and Plugged In Status
-- Low Fuel Light Status
-- Doors, Trunk and Hood Open/Close Status
-- Locking and Unlocking
-- Engine Status
-- Odometer, EV Range
-- Last Updated from Cloud: Timestamp this integration last attempted to retrieve data from the cloud
-- Last Updated to Cloud: Minutes since car synced to cloud during last update
-- Button: Request Wake Up from Car (hurts 12v battery) which requests the vehicle update the Last Updated to Cloud timestamp
-- Numbers: Charge limits for AC and DC
-- Switch: Charging (disabled unless plugged in) changing from off/on stops/starts charging 
-- Climate: remote starts HVAC, before changing mode to auto, set the Climate Desired Defrost/Heating Acc, and the climate temperature which are used to start the climate
+**This fork provides:**
+- ✅ **Fixed OTP authentication** (works with Kia's current API)
+- ✅ **Bug fixes** for config flow errors
+- ✅ **Active maintenance** for the community
+- ✅ **Updated dependencies**
 
-## Supported services ##
-this integration aims to automate what you can do in the official app, if you can't do it in the app because your subscription is expired then this integration won't be able to do it either.
+## 📦 Installation
 
-- start_climate / stop_climate: Control the HVAC car services
-- set_charge_limits: You can control your charging capacity limits using this services
+### Via HACS (Recommended)
 
-## Troubleshooting ##
-If you receive an error, please go through these steps;
-1. Enabled Debug Logging, at /config/integrations/integration/ha_kia_hyundai
-2. Restart you home assistant to capture initialization with debug logging, then try to do what your having trouble with
-3. Disable Debug Logging, at /config/integrations/integration/ha_kia_hyundai (which will download the logs)
-4. Click the three dots menu for your vehicle, at /config/integrations/integration/ha_kia_hyundai
-5. Click Download Diagnostics
-6. Attach both logs and diagnostics to your issue ticket.
+1. Open **HACS** in Home Assistant
+2. Click the **three dots** (⋮) in the top right
+3. Select **"Custom repositories"**
+4. Add this repository URL: `https://github.com/MarcusTaz/ha_kia_hyundai`
+5. Category: **Integration**
+6. Click **"Add"**
+7. Search for **"Kia Connect (USA)"** and install
+8. **Restart Home Assistant**
 
-***
+### Manual Installation
 
-[ha_kia_hyundai]: https://github.com/dahlb/ha_kia_hyundai
-[commits-shield]: https://img.shields.io/github/commit-activity/y/dahlb/ha_kia_hyundai.svg?style=for-the-badge
-[commits]: https://github.com/dahlb/ha_kia_hyundai/commits/main
-[hacs]: https://github.com/hacs/integration
-[hacsbadge]: https://img.shields.io/badge/HACS-Default-41BDF5.svg?style=for-the-badge
-[forum]: https://community.home-assistant.io/
-[license-shield]: https://img.shields.io/github/license/dahlb/ha_kia_hyundai.svg?style=for-the-badge
-[maintenance-shield]: https://img.shields.io/badge/maintainer-Bren%20Dahl%20%40dahlb-blue.svg?style=for-the-badge
-[releases-shield]: https://img.shields.io/github/release/dahlb/ha_kia_hyundai.svg?style=for-the-badge
-[releases]: https://github.com/dahlb/ha_kia_hyundai/releases
-[buymecoffee]: https://www.buymeacoffee.com/dahlb
-[buymecoffeebadge]: https://img.shields.io/badge/buy%20me%20a%20coffee-donate-yellow.svg?style=for-the-badge
+1. Download the latest release
+2. Extract to `/config/custom_components/ha_kia_hyundai/`
+3. Restart Home Assistant
+
+## ⚙️ Configuration
+
+1. Go to **Settings** → **Devices & Services**
+2. Click **"+ Add Integration"**
+3. Search for **"Kia US"**
+4. Enter your **Kia Connect username and password**
+5. Choose **OTP delivery method** (SMS or Email)
+6. Enter the **OTP code** when prompted
+7. Your vehicle(s) will be automatically added!
+
+### Multiple Vehicles
+
+If you have multiple vehicles on your Kia account, they will all be added automatically in a single setup flow.
+
+## 🔄 Update Frequency
+
+- **Cached data fetch**: Every 10 minutes (configurable)
+- **Force update**: Not recommended frequently to avoid draining 12V battery
+
+## 🎛️ Services
+
+### Climate Control
+- `climate.set_temperature` - Set target temperature
+- `climate.turn_on` - Start climate (uses preset defrost/heating settings)
+- `climate.turn_off` - Stop climate
+
+### Charging
+- `switch.turn_on` / `switch.turn_off` - Start/stop charging (when plugged in)
+- `number.set_value` - Set AC/DC charge limits
+
+### Vehicle Actions
+- `lock.lock` / `lock.unlock` - Lock/unlock doors
+- `button.press` - Request vehicle status update (use sparingly!)
+
+## 🐛 Troubleshooting
+
+### OTP Issues
+- Make sure you select the correct OTP method (SMS or Email)
+- Check your phone/email for the code
+- Code expires after a few minutes - request a new one if needed
+
+### "Invalid handler specified" Error
+This has been fixed in this fork! Make sure you're using the latest version.
+
+### Authentication Failed
+1. Verify your Kia Connect credentials work in the official app
+2. Make sure your Kia Connect subscription is active
+3. Enable debug logging (see below) and check logs
+
+### Enable Debug Logging
+
+Add to `configuration.yaml`:
+```yaml
+logger:
+  default: info
+  logs:
+    custom_components.ha_kia_hyundai: debug
+```
+
+Then go to **Settings** → **System** → **Logs** and look for errors.
+
+## 📝 Supported Entities
+
+### Sensors
+- Battery level (12V)
+- EV battery level
+- Charging status
+- Plugged in status
+- Odometer
+- EV range
+- Last update timestamp
+- Tire pressure warnings
+- Door/trunk/hood status
+- Low fuel warning
+
+### Controls
+- Door locks
+- Climate control
+- Charging switch
+- Charge limit numbers (AC/DC)
+- Heated steering wheel
+- Heated rear window
+- Defrost/heating acc switches
+
+### Buttons
+- Force update (requests fresh data from vehicle)
+
+## ⚖️ License
+
+MIT License - see [LICENSE](LICENSE) file
+
+## 🙏 Credits
+
+- **Original Author**: [Bren Dahl (@dahlb)](https://github.com/dahlb) - Thank you for creating this integration!
+- **OTP Fix**: ❤️ mmase ❤️ - For the critical OTP authentication fix
+- **Community Maintainer**: MarcusTaz - Keeping it alive for the community
+- **API Library**: [kia-hyundai-api](https://github.com/dahlb/kia-hyundai-api)
+
+## 🤝 Contributing
+
+This is a community-maintained project! Contributions are welcome:
+
+1. Fork the repository
+2. Create a feature branch
+3. Make your changes
+4. Test thoroughly
+5. Submit a pull request
+
+## ⚠️ Disclaimer
+
+This integration is not affiliated with, endorsed by, or connected to Kia Motors. Use at your own risk. Excessive API calls may drain your vehicle's 12V battery.
+
+## 📧 Support
+
+- **Issues**: [GitHub Issues](https://github.com/MarcusTaz/ha_kia_hyundai/issues)
+- **Discussions**: [GitHub Discussions](https://github.com/MarcusTaz/ha_kia_hyundai/discussions)
+
+---
+
+**If this integration helps you, please ⭐ star the repo to show support!**
