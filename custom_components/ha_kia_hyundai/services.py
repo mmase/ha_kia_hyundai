@@ -52,17 +52,16 @@ def async_setup_services(hass: HomeAssistant):
         if right_rear_seat is not None:
             right_rear_seat = STR_TO_ENUM[right_rear_seat]
 
-        await coordinator.api_connection.start_climate(
-            vehicle_id=coordinator.vehicle_id,
-            climate=bool(climate),
-            set_temp=set_temp,
-            defrost=bool(defrost),
-            heating=bool(heating),
-            driver_seat=driver_seat,
-            passenger_seat=passenger_seat,
-            left_rear_seat=left_rear_seat,
-            right_rear_seat=right_rear_seat,
+        # Use the vehicle manager to start climate
+        await hass.async_add_executor_job(
+            coordinator.vehicle_manager.start_climate,
+            coordinator.vehicle_id,
+            set_temp,
+            defrost,
+            climate,
+            heating,
         )
+        
         coordinator.async_update_listeners()
         await coordinator.async_request_refresh()
 
@@ -71,11 +70,14 @@ def async_setup_services(hass: HomeAssistant):
         ac_limit = int(call.data.get("ac_limit"))
         dc_limit = int(call.data.get("dc_limit"))
 
-        await coordinator.api_connection.set_charge_limits(
-            vehicle_id=coordinator.vehicle_id,
-            ac_limit=ac_limit,
-            dc_limit=dc_limit
+        # Use the vehicle manager to set charge limits
+        await hass.async_add_executor_job(
+            coordinator.vehicle_manager.set_charge_limits,
+            coordinator.vehicle_id,
+            ac_limit,
+            dc_limit,
         )
+        
         coordinator.async_update_listeners()
         await coordinator.async_request_refresh()
 
@@ -88,33 +90,57 @@ def async_setup_services(hass: HomeAssistant):
 
     return True
 
+
 def _get_coordinator_from_device(
         hass: HomeAssistant, call: ServiceCall
 ) -> VehicleCoordinator:
-    vehicle_ids = list(hass.data[DOMAIN].keys())
-    if len(vehicle_ids) == 1:
-        return hass.data[DOMAIN][vehicle_ids[0]]
-    else:
-        device_entry = device_registry.async_get(hass).async_get(
-            call.data[ATTR_DEVICE_ID]
-        )
-        config_entry_ids = device_entry.config_entries
-        config_entry_id = next(
-            (
-                config_entry_id
-                for config_entry_id in config_entry_ids
-                    if cast(
-                        ConfigEntry,
-                        hass.config_entries.async_get_entry(config_entry_id),
-                    ).domain
-                       == DOMAIN
-            ),
-            None,
-        )
-        config_entry_unique_id = hass.config_entries.async_get_entry(
+    """Get coordinator from device ID."""
+    # Get all entry data
+    entry_datas = list(hass.data[DOMAIN].values())
+    
+    # If only one account, get coordinators from it
+    if len(entry_datas) == 1:
+        coordinators = entry_datas[0]["coordinators"]
+        # Return first coordinator if only one vehicle
+        if len(coordinators) == 1:
+            return next(iter(coordinators.values()))
+    
+    # Multiple vehicles/accounts - need to find the right one
+    device_entry = device_registry.async_get(hass).async_get(
+        call.data[ATTR_DEVICE_ID]
+    )
+    
+    if not device_entry:
+        raise ValueError("Device not found")
+    
+    config_entry_ids = device_entry.config_entries
+    config_entry_id = next(
+        (
             config_entry_id
-        ).unique_id
-        return hass.data[DOMAIN][config_entry_unique_id]
+            for config_entry_id in config_entry_ids
+            if cast(
+                ConfigEntry,
+                hass.config_entries.async_get_entry(config_entry_id),
+            ).domain == DOMAIN
+        ),
+        None,
+    )
+    
+    if not config_entry_id:
+        raise ValueError("Config entry not found")
+    
+    entry_data = hass.data[DOMAIN][config_entry_id]
+    coordinators = entry_data["coordinators"]
+    
+    # Find the coordinator for this device
+    # Match by vehicle name in device identifiers
+    for vehicle_id, coordinator in coordinators.items():
+        if coordinator.vehicle_name in str(device_entry.identifiers):
+            return coordinator
+    
+    # Fallback: return first coordinator
+    return next(iter(coordinators.values()))
+
 
 @callback
 def async_unload_services(hass) -> None:
