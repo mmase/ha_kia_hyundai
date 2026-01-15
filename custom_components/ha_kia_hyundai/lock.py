@@ -1,14 +1,10 @@
 from logging import getLogger
-
 from homeassistant.components.lock import LockEntity, LockEntityDescription
 from homeassistant.config_entries import ConfigEntry
 from homeassistant.core import HomeAssistant
 from homeassistant.helpers.entity_platform import AddEntitiesCallback
 
-from .const import (
-    DOMAIN,
-    CONF_VEHICLE_ID,
-)
+from .const import DOMAIN
 from .vehicle_coordinator import VehicleCoordinator
 from .vehicle_coordinator_base_entity import VehicleCoordinatorBaseEntity
 
@@ -19,10 +15,17 @@ PARALLEL_UPDATES: int = 1
 async def async_setup_entry(
     hass: HomeAssistant, config_entry: ConfigEntry, async_add_entities: AddEntitiesCallback
 ):
-    vehicle_id = config_entry.data[CONF_VEHICLE_ID]
-    coordinator: VehicleCoordinator = hass.data[DOMAIN][vehicle_id]
-    if coordinator.can_remote_lock:
-        async_add_entities([Lock(coordinator)])
+    """Set up lock entities."""
+    entry_data = hass.data[DOMAIN][config_entry.entry_id]
+    coordinators = entry_data["coordinators"]
+    
+    entities = []
+    for coordinator in coordinators.values():
+        if coordinator.can_remote_lock:
+            entities.append(Lock(coordinator))
+    
+    if entities:
+        async_add_entities(entities)
 
 
 class Lock(VehicleCoordinatorBaseEntity, LockEntity):
@@ -44,11 +47,19 @@ class Lock(VehicleCoordinatorBaseEntity, LockEntity):
         return "mdi:lock" if self.is_locked else "mdi:lock-open-variant"
 
     async def async_lock(self, **kwargs: any):
-        await self.coordinator.api_connection.lock(vehicle_id=self.coordinator.vehicle_id)
+        """Lock the vehicle."""
+        await self.hass.async_add_executor_job(
+            self.coordinator.vehicle_manager.lock,
+            self.coordinator.vehicle_id
+        )
         self.coordinator.async_update_listeners()
         await self.coordinator.async_request_refresh()
 
     async def async_unlock(self, **kwargs: any):
-        await self.coordinator.api_connection.unlock(vehicle_id=self.coordinator.vehicle_id)
+        """Unlock the vehicle."""
+        await self.hass.async_add_executor_job(
+            self.coordinator.vehicle_manager.unlock,
+            self.coordinator.vehicle_id
+        )
         self.coordinator.async_update_listeners()
         await self.coordinator.async_request_refresh()
